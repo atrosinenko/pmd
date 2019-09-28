@@ -1,0 +1,952 @@
+/*
+ BSD-style license; for more info see http://pmd.sourceforge.net/license.html
+
+ Based on Antlr4 Modelica grammar downloaded from https://github.com/antlr/grammars-v4
+ License of the original modelica.g4:
+
+[The "BSD licence"]
+Copyright (c) 2012 Tom Everett
+All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+options {
+  CACHE_TOKENS=true;
+  STATIC = false;
+  USER_CHAR_STREAM = true;
+  JDK_VERSION = "1.5";
+
+  MULTI = true;
+  VISITOR = true;
+  NODE_USES_PARSER = true;
+  TRACK_TOKENS = true;
+  NODE_PACKAGE="net.sourceforge.pmd.lang.modelica.ast";
+
+  UNICODE_INPUT = true;
+  LOOKAHEAD = 3;
+}
+
+PARSER_BEGIN(ModelicaParser)
+package net.sourceforge.pmd.lang.modelica.ast;
+
+import net.sourceforge.pmd.lang.ast.CharStream;
+import net.sourceforge.pmd.lang.ast.TokenMgrError;
+
+public class ModelicaParser {
+
+}
+
+PARSER_END(ModelicaParser)
+
+TOKEN: {
+  <LPAREN: "(" >
+| <RPAREN: ")" >
+| <LCURL: "{">
+| <RCURL: "}" >
+| <LSQUARE: "[" >
+| <RSQUARE: "]" >
+| <SC: ";" >
+| <EQ_SIGN: "=" >
+| <COMMA: "," >
+| <DOT: "." >
+| <COLON: ":" >
+| <IMPORT: "import">
+| <WITHIN: "within" >
+| <ENCAPSULATED: "encapsulated" >
+| <PARTIAL: "partial" >
+| <FINAL: "final">
+| <CLASS: "class" >
+| <MODEL: "model" >
+| <OPERATOR: "operator" >
+| <RECORD: "record" >
+| <BLOCK: "block" >
+| <EXPANDABLE: "expandable" >
+| <CONNECTOR: "connector" >
+| <TYPE: "type" >
+| <PACKAGE: "package" >
+| <PURE: "pure" >
+| <IMPURE: "impure" >
+| <FUNCTION: "function" >
+| <EXTENDS: "extends" >
+| <END: "end" >
+| <ENUMERATION: "enumeration" >
+| <PUBLIC: "public" >
+| <PROTECTED: "protected" >
+| <EXTERNAL: "external" >
+| <REDECLARE: "redeclare" >
+| <INNER: "inner" >
+| <OUTER: "outer" >
+| <REPLACEABLE: "replaceable" >
+| <CONSTRAINEDBY: "constrainedby" >
+| <FLOW: "flow" >
+| <STREAM: "stream" >
+| <DISCRETE: "discrete" >
+| <PARAMETER: "parameter" >
+| <CONSTANT: "constant" >
+| <INPUT: "input" >
+| <OUTPUT: "output" >
+| <DER: "der" >
+| <CONNECT: "connect" >
+| <IF: "if" >
+| <ASSIGN: ":=" >
+| <EACH: "each" >
+| <INITIAL: "initial" >
+| <EQUATION: "equation" >
+| <ALGORITHM: "algorithm" >
+| <ANNOTATION: "annotation" >
+| <BREAK: "break" >
+| <RETURN: "return" >
+| <THEN: "then" >
+| <ELSEIF: "elseif" >
+| <ELSE: "else" >
+| <FOR: "for" >
+| <LOOP: "loop" >
+| <IN: "in" >
+| <WHILE: "while" >
+| <WHEN: "when" >
+| <ELSEWHEN: "elsewhen" >
+
+| <OR: "or" >
+| <AND: "and" >
+| <NOT: "not" >
+| <TRUE: "true" >
+| <FALSE: "false" >
+
+| <LT: "<" >
+| <LE: "<=" >
+| <GT: ">" >
+| <GE: ">=" >
+| <EQ: "==" >
+| <NEQ: "<>" >
+
+| <PLUS: "+" >
+| <MINUS: "-" >
+| <ASTERISK: "*" >
+| <SLASH: "/" >
+| <HAT: "^" >
+| <DOT_PLUS: ".+">
+| <DOT_MINUS: ".-">
+| <DOT_ASTERISK: ".*">
+| <DOT_SLASH: "./">
+| <DOT_HAT: ".^">
+}
+
+ASTStoredDefinition StoredDefinition(): {}
+{
+    (
+        <WITHIN>
+        (Name())?
+        <SC>
+    )*
+    (
+        (<FINAL>)?
+        ClassDefinition()
+        <SC>
+    )*
+    <EOF>
+    { return jjtThis; }
+}
+
+void ClassDefinition(): {}
+{
+    (<ENCAPSULATED>)?
+    ClassPrefixes()
+    ClassSpecifier()
+}
+
+void ClassSpecifier(): {}
+{
+    LongClassSpecifier() | ShortClassSpecifier() | DerClassSpecifier()
+}
+
+void ClassPrefixes(): {}
+{
+    (<PARTIAL>)?
+    (
+          <CLASS>
+        | <MODEL>
+        | ((<OPERATOR>)? <RECORD>)
+        | <BLOCK>
+        | ((<EXPANDABLE>)? <CONNECTOR>)
+        | <TYPE>
+        | <PACKAGE>
+        | ((<PURE> | <IMPURE>)? (<OPERATOR>)? <FUNCTION>)
+        | <OPERATOR>
+    )
+}
+
+void LongClassSpecifier(): {}
+{
+    (
+        <IDENT>
+        StringComment()
+        Composition()
+        <END>
+        <IDENT>
+    ) | (
+        <EXTENDS>
+        <IDENT>
+        (ClassModification())?
+        StringComment()
+        Composition()
+        <END>
+        <IDENT>
+    )
+}
+
+void ShortClassSpecifier(): {}
+{
+    (
+        <IDENT>
+        <EQ_SIGN>
+        BasePrefix()
+        Name()
+        (ArraySubscripts())?
+        (ClassModification())?
+        Comment()
+    ) | (
+        <IDENT>
+        <EQ_SIGN>
+        <ENUMERATION>
+        <LPAREN>
+        (
+              (EnumList())?
+            | <COLON>
+        )
+        <RPAREN>
+        Comment()
+    )
+}
+
+void DerClassSpecifier(): {}
+{
+    <IDENT>
+    <EQ_SIGN>
+    <DER>
+    <LPAREN>
+    Name()
+    <COMMA>
+    <IDENT>
+    (
+       <COMMA>
+       <IDENT>
+    )*
+    <RPAREN>
+    Comment()
+}
+
+void BasePrefix(): {}
+{
+    TypePrefix()
+}
+
+void EnumList(): {}
+{
+    EnumerationLiteral()
+    (
+        <COMMA>
+        EnumerationLiteral()
+    )*
+}
+
+void EnumerationLiteral(): {}
+{
+    <IDENT>
+    Comment()
+}
+
+void Composition(): {}
+{
+    ElementList()
+    (
+          (<PUBLIC> ElementList())
+        | (<PROTECTED> ElementList())
+        | EquationSection()
+        | AlgorithmSection()
+    )*
+    (
+        <EXTERNAL>
+        (LanguageSpecification())?
+        (ExternalFunctionCall())?
+        (Annotation())?
+        <SC>
+    )?
+    (
+        Annotation()
+        <SC>
+    )?
+}
+
+void LanguageSpecification(): {}
+{
+    <STRING>
+}
+
+void ExternalFunctionCall(): {}
+{
+    (
+        ComponentReference()
+        <EQ_SIGN>
+    )?
+    <IDENT>
+    <LPAREN>
+    (ExpressionList())?
+    <RPAREN>
+
+}
+
+void ElementList(): {}
+{
+    (
+        Element()
+        <SC>
+    )*
+}
+
+void Element(): {}
+{
+      ImportClause()
+    | ExtendsClause()
+    | (
+      (<REDECLARE>)?
+      (<FINAL>)?
+      (<INNER>)?
+      (<OUTER>)?
+      (
+            (ClassDefinition() | ComponentClause())
+          | (<REPLACEABLE> (ClassDefinition() | ComponentClause()) (ConstrainingClause() Comment())?)
+      )
+    )
+}
+
+void ImportClause(): {}
+{
+    <IMPORT>
+    (
+          (<IDENT> <EQ_SIGN> Name())
+        | (Name() <DOT> <ASTERISK>)
+        | (Name() <DOT> <LCURL> ImportList() <RCURL>)
+        | Name()
+    )
+    Comment()
+}
+
+void ImportList(): {}
+{
+    <IDENT>
+    (
+        <COMMA>
+        <IDENT>
+    )*
+}
+
+void ExtendsClause(): {}
+{
+    <EXTENDS>
+    Name()
+    (ClassModification())?
+    (Annotation())?
+}
+
+void ConstrainingClause(): {}
+{
+    <CONSTRAINEDBY>
+    Name()
+    (ClassModification())?
+}
+
+void ComponentClause(): {}
+{
+    TypePrefix()
+    TypeSpecifier()
+    (ArraySubscripts())?
+    ComponentList()
+}
+
+void TypePrefix(): {}
+{
+    (<FLOW> | <STREAM>)?
+    (<DISCRETE> | <PARAMETER> | <CONSTANT>)?
+    (<INPUT> | <OUTPUT>)?
+}
+
+void TypeSpecifier(): {}
+{
+    Name()
+}
+
+void ComponentList(): {}
+{
+    ComponentDeclaration()
+    (
+        <COMMA>
+        ComponentDeclaration()
+    )*
+}
+
+void ComponentDeclaration(): {}
+{
+    Declaration()
+    (ConditionAttribute())?
+    Comment()
+}
+
+void ConditionAttribute(): {}
+{
+    <IF>
+    Expression()
+}
+
+void Declaration(): {}
+{
+    <IDENT>
+    (ArraySubscripts())?
+    (Modification())?
+}
+
+void Modification(): {}
+{
+    (
+        ClassModification()
+        (
+            <EQ_SIGN>
+            Expression()
+        )?
+    ) | (
+        <EQ_SIGN>
+        Expression()
+    ) | (
+        <ASSIGN>
+        Expression()
+    )
+}
+
+void ClassModification(): {}
+{
+    <LPAREN>
+    (ArgumentList())?
+    <RPAREN>
+}
+
+void ArgumentList(): {}
+{
+    Argument()
+    (
+        <COMMA>
+        Argument()
+    )*
+}
+
+void Argument(): {}
+{
+      ElementModificationOrReplaceable()
+    | ElementRedeclaration()
+}
+
+void ElementModificationOrReplaceable(): {}
+{
+    (<EACH>)?
+    (<FINAL>)?
+    (
+          ElementModification()
+        | ElementReplaceable()
+    )
+}
+
+void ElementModification(): {}
+{
+    Name()
+    (Modification())?
+    StringComment()
+}
+
+void ElementRedeclaration(): {}
+{
+    <REDECLARE>
+    (<EACH>)?
+    (<FINAL>)?
+    (
+          (ShortClassDefinition() | ComponentClause1())
+        | ElementReplaceable()
+    )
+}
+
+void ElementReplaceable(): {}
+{
+    <REPLACEABLE>
+    (ShortClassDefinition() | ComponentClause1())
+    (ConstrainingClause())?
+}
+
+void ComponentClause1(): {}
+{
+    TypePrefix()
+    TypeSpecifier()
+    ComponentDeclaration1()
+}
+
+void ComponentDeclaration1(): {}
+{
+    Declaration()
+    Comment()
+}
+
+void ShortClassDefinition(): {}
+{
+    ClassPrefixes()
+    ShortClassSpecifier()
+}
+
+void EquationSection(): {}
+{
+    (<INITIAL>)?
+    <EQUATION>
+    (
+        Equation()
+        <SC>
+    )*
+}
+
+void AlgorithmSection(): {}
+{
+    (<INITIAL>)?
+    <ALGORITHM>
+    (
+        Statement()
+        <SC>
+    )*
+}
+
+void Equation(): {}
+{
+    (
+          (SimpleExpression() <EQ_SIGN> Expression())
+        | IfEquation()
+        | ForEquation()
+        | ConnectClause()
+        | WhenEquation()
+        | (Name() FunctionCallArgs())
+    )
+    Comment()
+}
+
+void Statement(): {}
+{
+    (
+          (ComponentReference() ((<ASSIGN> Expression()) | FunctionCallArgs()))
+        | (<LPAREN> OutputExpressionList() <RPAREN> <ASSIGN> ComponentReference() FunctionCallArgs())
+        | <BREAK>
+        | <RETURN>
+        | IfStatement()
+        | ForStatement()
+        | WhileStatement()
+        | WhenStatement()
+    )
+    Comment()
+}
+
+void IfEquation(): {}
+{
+    <IF>
+    Expression()
+    <THEN>
+    (Equation() <SC>)*
+    (
+        <ELSEIF>
+        Expression()
+        <THEN>
+        (Equation() <SC>)*
+    )*
+    (
+        <ELSE>
+        (Equation() <SC>)*
+    )?
+    <END> <IF>
+}
+
+void IfStatement(): {}
+{
+    <IF>
+    Expression()
+    <THEN>
+    (Statement() <SC>)*
+    (
+        <ELSEIF>
+        Expression()
+        <THEN>
+        (Statement() <SC>)*
+    )*
+    (
+        <ELSE>
+        (Statement() <SC>)*
+    )?
+    <END> <IF>
+}
+
+void ForEquation(): {}
+{
+    <FOR>
+    ForIndices()
+    <LOOP>
+    (Equation() <SC>)*
+    <END> <FOR>
+}
+
+void ForStatement(): {}
+{
+    <FOR>
+    ForIndices()
+    <LOOP>
+    (Statement() <SC>)*
+    <END> <FOR>
+}
+
+void ForIndices(): {}
+{
+    ForIndex()
+    (<COMMA> ForIndex())*
+}
+
+void ForIndex(): {}
+{
+    <IDENT>
+    (
+        <IN>
+        Expression()
+    )?
+}
+
+void WhileStatement(): {}
+{
+    <WHILE>
+    Expression()
+    <LOOP>
+    (Statement() <SC>)*
+    <END> <WHILE>
+}
+
+void WhenEquation(): {}
+{
+    <WHEN>
+    Expression()
+    <THEN>
+    (Equation() <SC>)*
+    (
+        <ELSEWHEN>
+        Expression()
+        <THEN>
+        (Equation() <SC>)*
+    )*
+    <END> <WHEN>
+}
+
+void WhenStatement(): {}
+{
+    <WHEN>
+    Expression()
+    <THEN>
+    (Statement() <SC>)*
+    (
+        <ELSEWHEN>
+        Expression()
+        <THEN>
+        (Statement() <SC>)*
+    )*
+    <END> <WHEN>
+}
+
+void ConnectClause(): {}
+{
+    <CONNECT>
+    <LPAREN>
+    ComponentReference()
+    <COMMA>
+    ComponentReference()
+    <RPAREN>
+}
+
+void Expression(): {}
+{
+      SimpleExpression()
+    | (
+          <IF>
+          Expression()
+          <THEN>
+          Expression()
+          (<ELSEIF> Expression() <THEN> Expression())*
+          <ELSE>
+          Expression()
+      )
+}
+
+void SimpleExpression(): {}
+{
+    LogicalExpression()
+    (
+        <COLON>
+        LogicalExpression()
+        (
+            <COLON>
+            LogicalExpression()
+        )?
+    )?
+}
+
+void LogicalExpression(): {}
+{
+    LogicalTerm()
+    (
+        <OR>
+        LogicalTerm()
+    )*
+}
+
+void LogicalTerm(): {}
+{
+    LogicalFactor()
+    (
+        <AND>
+        LogicalFactor()
+    )*
+}
+
+void LogicalFactor(): {}
+{
+    (<NOT>)?
+    Relation()
+}
+
+void Relation(): {}
+{
+    ArithmeticExpression()
+    (
+        RelOp()
+        ArithmeticExpression()
+    )?
+}
+
+void RelOp(): {}
+{
+  <LT> | <LE> | <GT> | <GE> | <EQ> | <NEQ>
+}
+
+void ArithmeticExpression(): {}
+{
+    (AddOp())?
+    Term()
+    (
+        AddOp()
+        Term()
+    )*
+}
+
+void AddOp(): {}
+{
+    <PLUS> | <MINUS> | <DOT_PLUS> | <DOT_MINUS>
+}
+
+void Term(): {}
+{
+    Factor()
+    (
+        MulOp()
+        Factor()
+    )*
+}
+
+void MulOp(): {}
+{
+    <ASTERISK> | <SLASH> | <DOT_ASTERISK> | <DOT_SLASH>
+}
+
+void Factor(): {}
+{
+    Primary()
+    (
+        (<HAT> | <DOT_HAT>)
+        Primary()
+    )?
+}
+
+void Primary(): {}
+{
+      <UNSIGNED_NUMBER>
+    | <STRING>
+    | <FALSE>
+    | <TRUE>
+    | ((Name() | <DER> | <INITIAL>) FunctionCallArgs())
+    | ComponentReference()
+    | (<LPAREN> OutputExpressionList() <RPAREN>)
+    | (<LSQUARE> ExpressionList() (<SC> ExpressionList())* <RSQUARE>)
+    | (<LCURL> FunctionArguments() <RCURL>)
+    | <END>
+}
+
+void Name(): {}
+{
+    (<DOT>)?
+    <IDENT>
+    (
+        <DOT>
+        <IDENT>
+    )*
+}
+
+void ComponentReference(): {}
+{
+    (<DOT>)?
+    <IDENT>
+    (ArraySubscripts())?
+    (
+        <DOT>
+        <IDENT>
+        (ArraySubscripts())?
+    )*
+}
+
+void FunctionCallArgs(): {}
+{
+    <LPAREN>
+    (FunctionArguments())?
+    <RPAREN>
+}
+
+void FunctionArguments(): {}
+{
+      (FunctionArgument() (<COMMA> FunctionArguments() | (<FOR> ForIndices()))?)
+    | NamedArguments()
+}
+
+void NamedArguments(): {}
+{
+    NamedArgument()
+    (
+        <COMMA>
+        NamedArguments()
+    )?
+}
+
+void NamedArgument(): {}
+{
+    <IDENT>
+    <EQ_SIGN>
+    FunctionArgument()
+}
+
+void FunctionArgument(): {}
+{
+    (
+        <FUNCTION>
+        Name()
+        <LPAREN>
+        (NamedArguments())?
+        <RPAREN>
+    ) | (
+        Expression()
+    )
+}
+
+void OutputExpressionList(): {}
+{
+    (Expression())?
+    (
+        <COMMA>
+        (Expression())?
+    )*
+}
+
+void ExpressionList(): {}
+{
+    Expression()
+    (
+        <COMMA>
+        Expression()
+    )*
+}
+
+void ArraySubscripts(): {}
+{
+    <LSQUARE>
+    Subscript()
+    (
+        <COMMA>
+        Subscript()
+    )*
+    <RSQUARE>
+}
+
+void Subscript(): {}
+{
+      <COLON>
+    | Expression()
+}
+
+void Comment(): {}
+{
+    StringComment()
+    (Annotation())?
+}
+
+void StringComment(): {}
+{
+    (
+        <STRING>
+        (<PLUS> <STRING>)*
+    )?
+}
+
+void Annotation(): {}
+{
+    <ANNOTATION>
+    ClassModification()
+}
+
+TOKEN: {
+  <IDENT: (<NONDIGIT> (<DIGIT> | <NONDIGIT>)*) | <Q_IDENT>>
+| <#Q_IDENT: "\'" (<Q_CHAR> | <S_ESCAPE>)+ "\'">
+| <#S_CHAR: ~["\"", "\\"] >
+| <#NONDIGIT: [ "_", "a" - "z", "A" - "Z" ]>
+| <STRING: "\"" (<S_CHAR> | <S_ESCAPE>)* "\"">
+| <#Q_CHAR: <NONDIGIT> | <DIGIT> | [ "!", "#", "$", "%", "&", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<", ">", "=", "?", "@", "[", "]", "^", "{", "}", "|", "~" ] >
+| <#S_ESCAPE: "\\" [ "’", "\'", "\"", "?", "\\", "a", "b", "f", "n", "r", "t", "v" ] >
+| <#DIGIT: ["0" - "9"]>
+| <#UNSIGNED_INTEGER: (<DIGIT>)+ >
+| <UNSIGNED_NUMBER: <UNSIGNED_INTEGER> ("." (<UNSIGNED_INTEGER>)?)? (["e", "E"] (["+", "-"])? <UNSIGNED_INTEGER>)?>
+}
+
+
+SKIP: {
+  <WS: ([" ", "\r", "\n", "\t"])+ >
+| <LINE_COMMENT: "//" (~["\r", "\n"])* >
+}
+
+
+// Copyed from cpp.jj
+MORE:
+{ "/*" : IN_MULTI_LINE_COMMENT }
+
+<IN_MULTI_LINE_COMMENT> SPECIAL_TOKEN:
+{ <MULTI_LINE_COMMENT: "*/">: DEFAULT }
+
+<IN_MULTI_LINE_COMMENT,IN_PREPROCESSOR_OUTPUT_COMMENT> MORE:
+{ < ~[] > }
